@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扶養の味方 | パート・アルバイトのための扶養管理・シミュレーター</title>
+  <meta name="description"
+    content="2025年最新制度対応！103万・106万・130万・160万の壁を自動チェック。シフト入力だけで、扶養の範囲内で効率よく働くためのシミュレーションができる無料アプリです。">
+
+  <!-- Open Graph / SNS -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="扶養の味方 | パート・アルバイトのための扶養管理・シミュレーター">
+  <meta property="og:description" content="シフトを入れるだけで「年収の壁」を簡単シミュレート。2025年の最新ルールに完全対応！">
+  <meta property="og:url" content="https://your-domain.com/">
+  <meta property="og:image" content="https://your-domain.com/og-image.png">
+
+  <link rel="stylesheet" href="style.css">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Outfit:wght@400;600&display=swap"
+    rel="stylesheet">
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div id="app-container">
+    <header>
+      <h1>扶養の味方</h1>
+    </header>
+
+    <main id="main-content" class="padding-md">
+      <!-- 初回設定フォーム -->
+      <section id="setup-view" class="card">
+        <h2>まずは基本設定をしましょう</h2>
+        <div id="setup-step1">
+          <div class="form-group">
+            <label for="hourly-wage">時給 (円)</label>
+            <input type="number" id="hourly-wage" placeholder="例: 1100" min="0">
+          </div>
+          <div class="form-group">
+            <label for="transport-type">交通費</label>
+            <select id="transport-type">
+              <option value="none">なし</option>
+              <option value="daily">日額 (出勤日数×〇円)</option>
+              <option value="monthly">月額 (定額)</option>
+            </select>
+          </div>
+          <div id="transport-value-group" class="form-group hidden">
+            <label id="transport-value-label" for="transport-value">金額 (円)</label>
+            <input type="number" id="transport-value" placeholder="例: 500" min="0">
+          </div>
+          <button id="next-to-step2" class="btn btn-primary">次へ</button>
+        </div>
+
+        <div id="setup-step2" class="hidden">
+          <div class="form-group">
+            <label for="target-wall">目標とする年収の壁</label>
+            <select id="target-wall">
+              <option value="1060000">106万円の壁 (社会保険・月8.8万)</option>
+              <option value="1300000" selected>130万円の壁 (社会保険)</option>
+              <option value="1360000">136万円の壁 (令和8年度 配偶者控除基準)</option>
+              <option value="1780000">178万円の壁 (令和8年度 所得税非課税基準)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>勤務先の従業員数は51人以上ですか？</label>
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
+              <button type="button" class="btn btn-secondary emp-btn" data-value="true" style="flex: 1;">はい</button>
+              <button type="button" class="btn btn-secondary emp-btn selected" data-value="false"
+                style="flex: 1;">いいえ</button>
+            </div>
+            <p class="text-small" style="margin-top: 8px;">※2024年10月より「51人以上」が社会保険適用の基準になりました。</p>
+          </div>
+          <div class="form-group">
+            <label>19歳〜22歳の学生ですか？</label>
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
+              <button type="button" class="btn btn-secondary student-btn" data-value="true" style="flex: 1;">はい</button>
+              <button type="button" class="btn btn-secondary student-btn selected" data-value="false"
+                style="flex: 1;">いいえ</button>
+            </div>
+            <p class="text-small" style="margin-top: 8px;">※2025年10月より、この年代の学生は社保扶養の基準が150万円に緩和されます。</p>
+          </div>
+          <button id="finish-setup" class="btn btn-primary">設定を完了する</button>
+        </div>
+      </section>
+
+      <!-- ダッシュボード (初期は非表示) -->
+      <section id="dashboard-view" class="hidden">
+        <div class="controls-top">
+          <button id="back-to-setup" class="btn-text">
+            <i data-lucide="chevron-left"></i> 設定を直す
+          </button>
+          <button id="reset-data" class="btn-text" style="color: var(--color-danger)">
+            <i data-lucide="trash-2"></i> リセット
+          </button>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <p class="text-small">現在の年間累計 (予測)</p>
+              <h2 id="total-income-display">¥0</h2>
+            </div>
+            <i data-lucide="trending-up" style="color: var(--color-mint-dark)"></i>
+          </div>
+          <div class="progress-container">
+            <div id="main-progress" class="progress-fill"></div>
+          </div>
+          <p id="remaining-info" class="text-small">残り: ¥1,300,000</p>
+        </div>
+
+        <!-- 警告メッセージ -->
+        <div id="alert-box" class="card hidden"
+          style="background-color: var(--color-orange); border: 1px solid var(--color-orange-dark);">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <i data-lucide="alert-circle" style="color: var(--color-warning)"></i>
+            <p id="alert-message" style="font-weight: 500; font-size: 0.95rem;"></p>
+          </div>
+        </div>
+
+        <!-- 最新制度の解説カード -->
+        <div class="card" style="background-color: var(--color-mint);">
+          <h3 style="font-size: 1rem; margin-bottom: 8px; color: var(--color-text);">💡 2026年(令和8年)の最新情報</h3>
+          <ul class="text-small" style="padding-left: 20px;">
+            <li><b>所得税の壁が「178万円」へ</b><br>令和8・9年度限定で、年収178万円まで本人の所得税がかからなくなります。</li>
+            <li><b>配偶者控除が「136万円」へ</b><br>パートナーが満額の控除を受けられる基準も136万円に緩和されました。</li>
+            <li><b>1.3Mの壁「契約重視」へ (4月〜)</b><br>一時的に130万円を超えても、労働契約上の年収が範囲内なら扶養を外れない運用が始まります。</li>
+            <li><b>月8.8万円基準の撤廃 (10月〜)</b><br>10月からは金額に関わらず「週20時間以上」が社保加入の主基準になります。</li>
+          </ul>
+        </div>
+
+        <!-- カレンダー入力エリア -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <h2>シフト入力</h2>
+            <input type="month" id="current-month-select" style="width: auto; padding: 4px 8px;">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="monthly-bonus" class="text-small" style="margin-bottom: 4px;">今月のボーナス・特別手当 (円)</label>
+            <input type="number" id="monthly-bonus" placeholder="例: 50000" min="0" style="padding: 8px;">
+          </div>
+          <div class="calendar-header">
+            <div>日</div>
+            <div>月</div>
+            <div>火</div>
+            <div>水</div>
+            <div>木</div>
+            <div>金</div>
+            <div>土</div>
+          </div>
+          <div id="calendar-grid" class="calendar-grid">
+            <!-- JSで生成 -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 時間入力モーダル -->
+    <div id="input-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2 id="modal-date-display">2月23日</h2>
+        <div class="form-group">
+          <label for="modal-hours">働いた時間 (h)</label>
+          <input type="number" id="modal-hours" step="0.5" placeholder="0" min="0">
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="save-modal" class="btn btn-primary" style="flex: 1;">保存</button>
+          <button id="close-modal" class="btn btn-secondary">閉じる</button>
+        </div>
+        <button id="delete-modal" class="btn-text"
+          style="color: var(--color-danger); margin-top: 15px; width: 100%; justify-content: center;">
+          <i data-lucide="trash-2"></i> この日のデータを消す
+        </button>
+      </div>
+    </div>
+
+    <!-- ヘルプ・免責事項モーダル -->
+    <div id="help-modal" class="modal-overlay hidden">
+      <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+        <h2>このアプリについて</h2>
+        <div class="text-small" style="text-align: left; line-height: 1.6;">
+          <h3>🔒 プライバシーについて</h3>
+          <p>入力されたデータ（時給やシフトなど）は、お使いのブラウザ内（localStorage）にのみ保存されます。サーバーへ送信されることはありませんので、安心してお使いください。</p>
+
+          <h3>⚠️ 免責事項</h3>
+          <p>本アプリの計算結果は、2025年時点の制度に基づいた概算（シミュレーション）です。実際の税額や社会保険加入の要否は、お住まいの自治体や勤務先の規定により異なる場合があります。</p>
+          <p>本アプリを利用したことによるいかなる損害についても、開発者は責任を負いかねます。最終的な判断は、必ず管轄の役所や勤務先の担当部署にご確認ください。</p>
+
+          <h3>📖 計算の根拠</h3>
+          <ul>
+            <li>所得税：令和8年度の基礎控除・給与所得控除の特例基準（178万円）</li>
+            <li>配偶者控除：令和8年度の所得要件緩和（136万円）</li>
+            <li>社会保険：2026年時点の特定適用事業所基準および4月からの適用運用変更</li>
+            <li>交通費：所得税計算からは除外、社会保険計算には含めて算出</li>
+          </ul>
+        </div>
+        <button id="close-help-modal" class="btn btn-primary" style="margin-top: 20px; width: 100%;">閉じる</button>
+      </div>
+    </div>
+
+    <footer
+      style="margin-top: auto; padding: 20px; text-align: center; color: var(--color-text-light); font-size: 0.8rem;">
+      <p>&copy; 2026 扶養の味方 - パートナーの安心を。</p>
+      <button id="open-help" class="btn-text" style="font-size: 0.75rem; margin-top: 5px;">このアプリについて・免責事項</button>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>
